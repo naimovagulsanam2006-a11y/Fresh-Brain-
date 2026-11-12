@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Naimova learner</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:var(--tg-theme-bg-color,#fff);--tx:var(--tg-theme-text-color,#1a1a1a);--sub:var(--tg-theme-hint-color,#777);--bt:var(--tg-theme-button-color,#2f7d5b);--bx:var(--tg-theme-button-text-color,#fff);--cd:var(--tg-theme-secondary-bg-color,#f1f3f2)}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--tx);padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+main{padding:16px;max-width:560px;margin:0 auto}
+h2{margin:4px 0 12px}
+.card{background:var(--cd);border-radius:14px;padding:14px;margin:10px 0}
+button{font:inherit;border:0;border-radius:12px;padding:12px 14px;background:var(--bt);color:var(--bx);cursor:pointer}
+button.alt{background:var(--cd);color:var(--tx)}
+button:disabled{opacity:.35}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;background:var(--cd);color:var(--tx)}
+.opt.ok{background:#2e9e5b;color:#fff}.opt.no{background:#d9534f;color:#fff}
+.keys{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.keys button{padding:10px 0}
+.word{font:700 28px/1.3 ui-monospace,monospace;letter-spacing:4px;text-align:center;margin:14px 0}
+.sub{color:var(--sub);font-size:14px}
+textarea{width:100%;min-height:90px;border-radius:12px;border:1px solid var(--sub);padding:10px;font:inherit;background:var(--bg);color:var(--tx)}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--cd);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{flex:1;background:none;color:var(--sub);font-size:12px;padding:6px 2px}
+nav button.on{color:var(--bt);font-weight:700}
+nav span{display:block;font-size:20px}
+.mg{display:grid;gap:8px;margin:12px 0}.mc{perspective:600px;aspect-ratio:1/1.15;cursor:pointer}.mi{position:relative;width:100%;height:100%;transition:transform .4s;transform-style:preserve-3d}.mc.up .mi{transform:rotateY(180deg)}.mf,.mk{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;justify-content:center;border-radius:12px;text-align:center;padding:4px;font-size:13px;font-weight:600;overflow-wrap:anywhere}.mf{background:var(--bt);color:var(--bx);font-size:24px}.mk{background:var(--cd);transform:rotateY(180deg);border:2px solid var(--bt)}.mk.uz{border-color:#d98c2b}.mc.ok .mk{background:#2e9e5b;color:#fff;border-color:#2e9e5b}
+.wg{display:grid;gap:6px;margin:12px auto;max-width:300px}.wr{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.wt{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px;border:2px solid var(--sub);border-radius:8px;text-transform:uppercase}.wt.g,.kr button.g{background:#2e9e5b;border-color:#2e9e5b;color:#fff}.wt.y,.kr button.y{background:#d9a21b;border-color:#d9a21b;color:#fff}.wt.x{background:#6b7280;border-color:#6b7280;color:#fff}.kr button.x{background:#6b7280;color:#fff;opacity:.55}
+li{margin:8px 0}
+.kr{display:flex;gap:5px;justify-content:center;margin:5px 0}.kr button{flex:1;padding:12px 0;min-width:0}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav id="nav"></nav>
+<script>
+const tg=window.Telegram&&Telegram.WebApp;if(tg){tg.ready();tg.expand();}
+const MY_USERNAME="naimova_learner"; // Telegram username, @ belgisiz
+
+const LV=["A1","A2","B1","B2","C1"],RS=5;
+const LW=[
+[["apple","olma"],["book","kitob"],["water","suv"],["house","uy"],["friend","do'st"],["school","maktab"],["mother","ona"],["bread","non"],["window","deraza"],["family","oila"]],
+[["kitchen","oshxona"],["holiday","ta'til"],["weather","ob-havo"],["travel","sayohat"],["neighbour","qo'shni"],["ticket","chipta"],["market","bozor"],["breakfast","nonushta"],["hospital","kasalxona"],["bicycle","velosiped"]],
+[["environment","atrof-muhit"],["experience","tajriba"],["opportunity","imkoniyat"],["advantage","afzallik"],["community","jamoa"],["education","ta'lim"],["decision","qaror"],["challenge","qiyin sinov"],["knowledge","bilim"],["achievement","yutuq"]],
+[["attitude","munosabat"],["consequence","oqibat"],["influence","ta'sir"],["perspective","qarash, nuqtai nazar"],["awareness","xabardorlik"],["reliable","ishonchli"],["controversial","bahsli"],["sustainable","barqaror"],["comprehensive","har tomonlama, keng qamrovli"],["reluctant","istamaydigan"]],
+[["ubiquitous","hamma joyda uchraydigan"],["meticulous","o'ta puxta"],["ambiguous","ikki ma'noli, noaniq"],["resilient","chidamli"],["pragmatic","amaliy"]]];
+
+const BOOKS=[
+{t:"Jinoyat va jazo",q:[
+["Roman muallifi kim?",["Tolstoy","Chexov","Dostoyevskiy"],2],
+["Bosh qahramon kim?",["Raskolnikov","Svidrigaylov","Razumixin"],0],
+["Voqealar qaysi shaharda bo'ladi?",["Moskva","Sankt-Peterburg","Odessa"],1],
+["Kampirning singlisi, tasodifan guvoh bo'lib o'ldirilgan ayol kim?",["Sonya","Lizaveta","Dunya"],1],
+["Raskolnikov nima bilan o'ldiradi?",["Pichoq","Bolg'a","Bolta"],2],
+["Raskolnikovni tergov qiladigan amaldor kim?",["Porfiriy Petrovich","Zametov","Luzhin"],0],
+["Raskolnikovning to'liq ismi-sharifi?",["Rodion Romanovich","Rodion Pavlovich","Rodion Ivanovich"],0],
+["Sonya unga Injildan qaysi voqeani o'qib beradi?",["To'fon","Iso tug'ilishi","Lazarning tirilishi"],2],
+["Raskolnikov necha yil mehnat lageriga hukm qilinadi?",["15 yil","8 yil","Umrbod"],1],
+["Roman oxirida Dunya kimga turmushga chiqadi?",["Razumixin","Luzhin","Svidrigaylov"],0]],
+i:["Jinoyat uchun haqiqiy jazo ko'pincha sudgacha, vijdonda boshlanadi.","Aqlli ko'ringan nazariya ham odamni xavfli yo'lga solib qo'yishi mumkin.","\"Maqsad vositani oqlaydi\" degan fikr odamni o'zini aldashga olib boradi.","G'urur va yolg'izlik odamni boshqalardan uzoqlashtiradi.","Qashshoqlik bosim o'tkazadi, lekin yomon ishni oqlamaydi.","O'zini \"alohida odam\" deb hisoblash ko'pincha ichki zaiflikni yashirish usuli.","Sonyaning mehri va sabri insonni qutqara oladi.","Aybni tan olish ozodlik sari birinchi qadam.","Fikrlar yolg'izlikda kuchayadi, odamlar bilan gaplashish yengillashtiradi.","Haqiqiy o'zgarish tez bo'lmaydi, u uzoq ichki yo'l orqali keladi."]},
+{t:"1984",q:[
+["Roman muallifi kim?",["Aldous Xaksli","Rey Bredberi","Jorj Oruell"],2],
+["Bosh qahramon kim?",["Uinston Smit","O'Brayen","Parsons"],0],
+["Partiyaning hamma narsani kuzatuvchi timsoli kim?",["Goldstayn","Katta Birodar","Sayme"],1],
+["Uinston qaysi vazirlikda ishlaydi?",["Tinchlik vazirligi","Sevgi vazirligi","Haqiqat vazirligi"],2],
+["Uinstonning ishi nima?",["O'tmishdagi gazeta va hujjatlarni qayta yozish","Askarlarni o'qitish","Qamoqda qorovullik"],0],
+["Qiynoq xonasining raqami nechchi?",["13","101","84"],1],
+["Oruellning haqiqiy ismi nima?",["Jorj Eduard Bler","Jon Artur Orvell","Erik Artur Bler"],2],
+["Roman qaysi yilda nashr etilgan?",["1948","1949","1953"],1],
+["Uinston va Yuliya yashirincha uchrashadigan xonani ijaraga bergan do'kon egasi kim?",["Mister Charrington","Parsons","Sayme"],0],
+["Sayme nima ustida ishlaydi?",["Radioeshittirishlar","Katta Birodar portretlari","Yangiyozuv (Newspeak) lug'ati"],2]],
+i:["Tilni nazorat qilgan fikrni ham nazorat qiladi: so'z kamaysa, o'ylash kamayadi.","Hokimiyat o'tmishni o'zgartirsa, kelajakni ham boshqaradi.","Doimiy kuzatuv odamni o'zi bilan ham samimiy bo'lolmaydigan qiladi.","Qo'rquv va nafrat odamlarni birlashtirishning arzon usuli.","Haqiqatni boshqalar belgilab bersa, odam o'z fikriga ishonmay qo'yadi.","Yolg'on takrorlanaversa, odamlar uni haqiqat deb qabul qila boshlaydi.","Oddiy shaxsiy his-tuyg'ular, sevgi va do'stlik, bosimga qarshi kuch.","Yozish va xotira erkin fikrning birinchi himoyasi.","Kimga ishonishni bilmaslik odamni eng yolg'iz qiladi.","Erkinlik birdan emas, kichik-kichik chekinishlar bilan yo'qotiladi."]},
+{t:"Kecha va kunduz",q:[
+["Asar muallifi kim?",["Fitrat","Cho'lpon","Hamza"],1],
+["Romanning bosh qahramoni qiz kim?",["Kumush","Oftob oyim","Zebi"],2],
+["Asar qaysi janrga kiradi?",["Roman","Doston","Drama"],0],
+["Zebining otasi kim?",["Akbarali mingboshi","Miryoqub","Razzoq so'fi"],2],
+["Zebi kimga turmushga beriladi?",["Akbarali mingboshiga","Otabekka","Homidga"],0],
+["Nomdagi \"kecha\" va \"kunduz\" nimani anglatadi?",["Yoz va qishni","Eski va yangi davrni","Ikki oilani"],1],
+["Cho'lponning haqiqiy ismi nima?",["Abdulla Avloniy","Abdurauf Fitrat","Abdulhamid Sulaymon o'g'li"],2],
+["\"Cho'lpon\" taxallusi nimani bildiradi?",["Shamol","Tong yulduzi (Zuhra)","Tog'"],1],
+["Cho'lpon qaysi yilda qatag'on qilingan?",["1938","1929","1945"],0],
+["Cho'lpon qaysi shaharda tug'ilgan?",["Andijon","Samarqand","Buxoro"],0]],
+i:["Eski tuzum ham, yangi tuzum ham oddiy odam taqdiriga bevosita ta'sir qiladi.","Qizning taqdirini boshqalar hal qilganda, orzulari ko'pincha yo'qoladi.","Hokimiyat va boylik odamni adolatdan uzoqlashtirishi mumkin.","Savodsizlik va johillik zulmning eng qulay zamini.","Jamiyat o'zgarishi uchun avval odamlarning ongi o'zgarishi kerak.","Shaxsiy dard ko'pincha butun xalqning dardi bilan bog'liq.","Mol-dunyo uchun qilingan nikoh baxt keltirmaydi.","Adabiyot o'z davrining haqiqatini kelajak avlodga yetkazadi.","Yangi davr kelishi eskining og'riqlarini birdan yo'qotmaydi.","Jasur so'z aytgan odam og'ir bedel to'laydi, lekin so'zi yashab qoladi."]},
+{t:"Telba",q:[
+["Roman muallifi kim?",["Tolstoy","Turgenev","Dostoyevskiy"],2],
+["Bosh qahramon kim?",["Knyaz Mishkin","Rogojin","Ganya"],0],
+["Mishkin Peterburgga qayerdan keladi?",["Fransiyadan","Moskvadan","Shveytsariyadan"],2],
+["Rogojinning ismi nima?",["Parfyon","Gavrila","Ardalion"],0],
+["Nastasya Filippovna 100 000 rublni nima qiladi?",["Mishkinga beradi","Kaminga tashlaydi","Xayriyaga beradi"],1],
+["Epanchinlarning kenja qizi kim?",["Adelaida","Aleksandra","Aglaya"],2],
+["Roman qaysi yillarda e'lon qilingan?",["1866","1868-1869","1880"],1],
+["Rogojin uyidagi, Mishkinni larzaga solgan rasm qaysi?",["Leonardoning So'nggi kechki ovqat","Golbeynning Qabrdagi o'lik Iso","Rafaelning Sistina Madonnasi"],1],
+["Nastasya Filippovna bolaligida kimning homiyligida o'sgan?",["Epanchin","Totskiy","Rogojin"],1],
+["Generalning xotini va Mishkinning uzoq qarindoshi kim?",["Varvara Ardalionovna","Nina Aleksandrovna","Lizaveta Prokofyevna"],2]],
+i:["Haqiqiy samimiylik jamiyatda ko'pincha g'alati ko'rinadi.","Mehribonlik zaiflik emas, lekin dunyo uni ko'pincha tushunmaydi.","Hamdardlik va sevgi bir narsa emas, ularni aralashtirish og'riq keltiradi.","Pul va mavqe odamlarning haqiqiy yuzini ochib beradi.","G'urur va uyat odamni o'ziga ham, boshqalarga ham zarar yetkazishga undaydi.","Boshqani hukm qilishdan oldin uning og'rig'ini tushunishga urinish kerak.","Ezgulik va go'zallik dunyoni o'zgartirishi mumkin degan umid hayotga ma'no beradi.","Sevgi uchburchagida ko'pincha hamma yutqazadi.","Toza yurak ham og'ir sharoitga hamisha bardosh bera olmaydi.","Jamiyat o'zgacha odamga munosabati uning asl odobini ko'rsatadi."]},
+{t:"Oydin tunlar",q:[
+["Asar muallifi kim?",["Gogol","Turgenev","Dostoyevskiy"],2],
+["Voqealar qaysi shaharda bo'ladi?",["Moskva","Sankt-Peterburg","Kiyev"],1],
+["Qiz qahramonning ismi nima?",["Nastenka","Sonya","Katya"],0],
+["Nastenka kim bilan yashaydi?",["Onasi bilan","Akasi bilan","Ko'zi ojiz buvisi bilan"],2],
+["Voqealar necha kecha davom etadi?",["To'rt kecha (va bir tong)","Uch kecha","Yetti kecha"],0],
+["Nastenka kimni kutadi?",["Sobiq ijarachini","Akasini","Otasini"],0],
+["Qissa qaysi yilda yozilgan?",["1866","1848","1859"],1],
+["Dostoyevskiy qissani qaysi shoirga bag'ishlagan?",["Nekrasov","Pleshcheyev","Fet"],1],
+["Buvisi Nastenkani qanday ushlab turgan?",["Ko'ylagini o'z ko'ylagiga to'g'nog'ich bilan biriktirib","Eshikni qulflab","Xizmatkor qo'yib"],0],
+["Sobiq ijarachi qayoqqa ketgan edi?",["Varshavaga","Qozonga","Moskvaga"],2]],
+i:["Xayol dunyosi tasalli beradi, lekin haqiqiy hayotdan ajratib qo'yishi mumkin.","Yolg'izlik odamni birinchi samimiy suhbatga juda chanqoq qiladi.","Bir lahzalik baxt ham butun hayotga yetadigan xotira bo'la oladi.","Mehr ko'rsatish har doim o'zaro javob olish degani emas.","Sevgan odamning baxtini o'z baxtidan ustun qo'ya bilish katta kuch.","Kutish umid beradi, lekin odamni hozirgi kundan chalg'itishi mumkin.","Haqiqiy samimiylik uchun ko'pincha begona odam bilan ochilish osonroq.","Birovga yordam berganda ham o'z qalbingni himoya qilishni unutma.","Orzu va haqiqat orasidagi masofani bilish yetuklik belgisi.","Yo'qotishdan keyin ham minnatdorlik his qila bilish insonni kuchli qiladi."]},
+{t:"O'tkan kunlar",q:[
+["Romanning muallifi kim?",["Cho'lpon","Abdulla Qodiriy","Oybek"],1],
+["Bosh qahramon yigit kim?",["Otabek","Homid","Hasanali"],0],
+["Otabek sevgan qiz kim?",["Zaynab","Oftob oyim","Kumush"],2],
+["Otabekning otasi kim?",["Mirzakarim qutidor","Yusufbek hoji","Homid"],1],
+["Otabekning ikkinchi xotini kim?",["Zaynab","Ra'no","Kumush"],0],
+["Kumush qaysi shaharlik?",["Buxoro","Toshkent","Marg'ilon"],2],
+["Abdulla Qodiriyning taxallusi qaysi?",["Julqunboy","Gulxaniy","Boburshoh"],0],
+["Qodiriyning ikkinchi romani qaysi?",["Obid ketmon","Mehrobdan chayon","Sinchalak"],1],
+["O'tkan kunlar jurnalda qaysi yillarda bosilgan?",["1925-1926","1919-1920","1934-1935"],0],
+["Qodiriy qaysi yilda qatag'on qilingan?",["1929","1945","1938"],2]],
+i:["Sevgi ham jamiyat va oila bosimiga duch keladi.","Ota-ona rozi bo'lmasa ham, qalbingdagi sadoqatni saqlash katta jasorat.","Hasad va g'arazgo'ylik odamni o'ziga ham, boshqalarga ham zarar yetkazadi.","Odob va sabr og'ir damlarda insonning haqiqiy qadrini ko'rsatadi.","Shaxsiy baxt ko'pincha yurt tashvishlari bilan bog'liq bo'ladi.","Urf-odat go'zal bo'lsa-da, odam taqdirini bosib qo'yishi mumkin.","Ikkinchi xotinning ham o'z dardi bor: sevilmagan odam ham azob chekadi.","Sofdillik va halollik uzoq muddatda hurmat keltiradi.","Yaxshi do'st og'ir kunlarda yoningda turadi.","O'tgan kunlarni eslash kelajak uchun saboq beradi."]},
+{t:"Dunyoning ishlari",q:[
+["Asar muallifi kim?",["Abdulla Qahhor","O'tkir Hoshimov","Said Ahmad"],1],
+["Asarning markaziy obrazi kim?",["Ota","Do'st","Ona"],2],
+["Asar nimaga bag'ishlangan?",["Ona mehri va farzandlik burchiga","Sarguzasht va safarga","Urush strategiyasiga"],0],
+["Asar qaysi janrga mansub?",["Doston","She'riy to'plam","Qissa"],2],
+["Asarning asosiy g'oyasi qaysi?",["Boylik yig'ish","Ona mehrining qadriga o'z vaqtida yetish","Mashhur bo'lish"],1],
+["Ona obrazi qaysi fazilatlar timsoli?",["Takabburlik","Mehribonlik, sabr va fidoyilik","Hasad"],1],
+["O'tkir Hoshimov qaysi yilda tug'ilgan?",["1941","1935","1950"],0],
+["Quyidagilardan qaysi biri Hoshimovning asari?",["O'tkan kunlar","Mehrobdan chayon","Daftar hoshiyasidagi bitiklar"],2],
+["Hoshimov qaysi yilda vafot etgan?",["2005","2013","2020"],1],
+["Quyidagilardan qaysi biri Hoshimovga tegishli emas?",["Tushda kechgan umrlar","Nur borki, soya bor","Kecha va kunduz"],2]],
+i:["Onaning qadriga u tirikligida yetish kerak.","Ona mehrini hech narsa bilan o'lchab bo'lmaydi.","Farzand qancha yutuqqa erishsa ham, ona oldidagi qarzini to'liq uzolmaydi.","Mehringni keyinga qoldirma, vaqtida ko'rsat.","Oddiy kundalik voqealar ortida katta hayotiy ma'no yashirin.","Insoniylik boylikdan ustun.","Ona ko'pincha o'z istaklaridan kechib, farzand baxtini o'ylaydi.","Sabr va fidoyilik zaiflik emas, ichki kuch.","Ota-onang bilan gaplashishga vaqt topish eng yaxshi sarmoya.","Hayotning eng katta saboqlari ko'pincha eng yaqin odamlardan olinadi."]},
+{t:"Ikki eshik orasi",q:[
+["Asar muallifi kim?",["Said Ahmad","O'tkir Hoshimov","Pirimqul Qodirov"],1],
+["Ikki eshik orasi qaysi janrga mansub?",["Roman","Qissa","Doston"],0],
+["Asar qaysi tilda yozilgan?",["Rus","Turk","O'zbek"],2],
+["Hoshimovning Dunyoning ishlari asari qaysi janrda?",["Doston","Roman","Qissa"],2],
+["Quyidagilardan qaysi biri Hoshimovning asari?",["Kecha va kunduz","O'tkan kunlar","Ikki eshik orasi"],2],
+["Hoshimov qaysi davr adabiyoti vakili?",["XX asr ikkinchi yarmi","XV asr","XIX asr"],0],
+["O'tkir Hoshimov qaysi yilda vafot etgan?",["2005","2013","2020"],1],
+["Hoshimov qaysi jurnalning bosh muharriri bo'lgan?",["Mushtum","Sharq yulduzi","Saodat"],1],
+["Quyidagilardan qaysi biri Hoshimovga tegishli emas?",["Obid ketmon","Tushda kechgan umrlar","Nur borki, soya bor"],0],
+["Hoshimovga qaysi unvon berilgan?",["Xalq shoiri","O'zbekiston xalq yozuvchisi","Xalq artisti"],1]],
+i:["Hayot tug'ilish va o'lim oralig'idagi qisqa safar.","Inson qanday yashagani va qanday iz qoldirgani eng muhim.","Sadoqat va vafo katta qadriyat.","Yaxshilik ham, yomonlik ham oqibatsiz qolmaydi.","Sinovlar odamning haqiqiy yuzini ochadi.","Ayriliq va kutish insonni toblaydi.","Har bir insonning taqdiri qadrli.","Qiyin damlarda umid yashashga kuch beradi.","Tinchlik va oddiy kundalik hayotning qadriga yetish kerak.","Hayot hikmatini ko'pincha tajribali kishilardan o'rganamiz."]}
+];
+
+const $=s=>document.querySelector(s),app=$("#app");
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const store={
+ get(k,cb){try{if(tg&&tg.CloudStorage){tg.CloudStorage.getItem(k,(e,v)=>cb(!e&&v?v:null));return;}}catch(e){}try{cb(localStorage.getItem(k))}catch(e){cb(null)}},
+ set(k,v){try{if(tg&&tg.CloudStorage){tg.CloudStorage.setItem(k,v);return;}}catch(e){}try{localStorage.setItem(k,v)}catch(e){}}
+};
+
+const TABS=[["game","🧠","O'yin"],["quiz","📝","Quiz"],["notes","🗒","Eslatma"],["ins","💡","Insight"],["chat","💬","Chat"]];
+function nav(t){$("#nav").innerHTML=TABS.map(x=>`<button class="${x[0]==t?"on":""}" onclick="go('${x[0]}')"><span>${x[1]}</span>${x[2]}</button>`).join("");}
+function go(t){nav(t);({game,quiz,notes,ins,chat})[t]();window.scrollTo(0,0);}
+
+/* Fresh Brain: A1-C1 darajalar */
+let G,S;
+function fresh(){
+ app.innerHTML=`<h2>🧠 Fresh Brain</h2><div class="card"><b>📖 O'yin qoidalari</b><ol style="padding-left:18px">
+<li>O'yin <b>A1</b> darajadan boshlanadi. Darajalar ketma-ket: <b>A1 → A2 → B1 → B2 → C1</b>.</li>
+<li>Har bosqichda <b>5 ta so'z</b> beriladi. Sizga so'zning o'zbekcha ma'nosi ko'rsatiladi, siz uning inglizchasini harf tugmalari bilan yozasiz.</li>
+<li>Harfni xato bossangiz, <b>⌫</b> tugmasi bilan oxirgi harfni o'chirib, to'g'rilab yozishingiz mumkin.</li>
+<li>Yozib bo'lgach <b>Tekshirish</b> ni bosing. Noto'g'ri bo'lsa, bitta jon ❤️ kamayadi. Har so'zga <b>3 ta urinish</b> beriladi.</li>
+<li>Bosqichdagi <b>5 ta so'zni ham to'g'ri</b> yozsangiz, keyingi darajaga o'tasiz.</li>
+<li>Birorta so'z topilmasa, <b>bir daraja pastga</b> qaytasiz va o'sha darajadagi hali ko'rmagan so'zlar beriladi.</li>
+<li>Hammasini yutib <b>C1</b> dan o'tsangiz, o'yin tugaydi 🏆</li></ol>
+<div class="sub">Jami 45 ta so'z: A1 (10), A2 (10), B1 (10), B2 (10), C1 (5).</div></div><button onclick="begin()">Boshlash ▶️</button>`;
+}
+function begin(){S={lvl:0,pool:LW.map(a=>shuffle(a))};startRound();}
+function draw(l){if(S.pool[l].length<RS)S.pool[l]=shuffle(LW[l]);return S.pool[l].splice(0,RS);}
+function startRound(){S.words=draw(S.lvl);S.i=0;S.lost=0;S.res=[];newWord();}
+function newWord(){const w=S.words[S.i];G={w:w[0],h:w[1],t:[],l:3,st:"play",msg:""};drawGame();}
+function chips(){return `<div style="margin-bottom:8px">`+LV.map((x,i)=>`<span style="display:inline-block;padding:4px 10px;margin:2px;border-radius:10px;background:${i==S.lvl?"var(--bt)":"var(--cd)"};color:${i==S.lvl?"var(--bx)":"var(--sub)"}">${x}</span>`).join("")+`</div>`;}
+function drawGame(){
+ const n=G.w.length,play=G.st=="play";
+ const slots=[...G.w].map((c,i)=>`<span style="display:inline-block;min-width:22px;border-bottom:3px solid var(--sub);margin:0 3px;text-align:center">${G.st=="lost"?c.toUpperCase():(G.t[i]?G.t[i].toUpperCase():"&nbsp;")}</span>`).join("");
+ let kb="";
+ if(play){kb=["qwertyuiop","asdfghjkl","zxcvbnm"].map((r,ri)=>`<div class="kr">${[...r].map(c=>`<button onclick="typeL('${c}')">${c.toUpperCase()}</button>`).join("")}${ri==2?`<button class="alt" onclick="backL()">⌫</button>`:""}</div>`).join("")+`<p><button ${G.t.length==n?"":"disabled"} onclick="checkW()" style="width:100%">Tekshirish ✅</button></p>`;}
+ app.innerHTML=`<h2>🧠 Fresh Brain</h2>${chips()}<div class="sub">${LV[S.lvl]} · so'z ${S.i+1}/${RS}</div><div class="card"><div class="sub">Ma'nosi: <b>${esc(G.h)}</b></div><div class="word" style="letter-spacing:0">${slots}</div><div style="text-align:center">${"❤️".repeat(G.l)}${"🖤".repeat(3-G.l)}</div>${G.msg?`<p style="text-align:center">${G.msg}</p>`:""}${G.st=="won"?"<p style='text-align:center'>🎉 <b>To'g'ri!</b></p>":""}${G.st=="lost"?`<p style="text-align:center">😅 Bu safar topilmadi. To'g'ri javob: <b>${G.w}</b></p>`:""}</div>${play?kb:`<button onclick="nextWord(${G.st=="won"})">Keyingisi ➡️</button>`}`;
+}
+function typeL(c){if(G.t.length<G.w.length){G.t.push(c);G.msg="";drawGame();}}
+function backL(){G.t.pop();G.msg="";drawGame();}
+function checkW(){
+ if(G.t.join("")==G.w){G.st="won";}
+ else{G.l--;G.t=[];if(G.l<=0)G.st="lost";else G.msg="❌ Noto'g'ri. Qayta urinib ko'ring.";}
+ drawGame();
+}
+function nextWord(won){S.res.push([G.w,G.h,won]);if(!won)S.lost++;S.i++;if(S.i<RS)newWord();else endRound();}
+function endRound(){
+ const pass=S.lost==0,old=LV[S.lvl];let msg,btn;
+ const list=S.res.map(r=>`<li>${r[2]?"✅":"❌"} <b>${esc(r[0])}</b> — ${esc(r[1])}</li>`).join("");
+ if(pass&&S.lvl==4){msg="🏆 <b>Tabriklaymiz!</b> C1 darajagacha yetib keldingiz.";btn=`<button onclick="fresh()">🔄 Boshidan</button>`;}
+ else if(pass){S.lvl++;msg=`👏 Hammasi to'g'ri! Keyingi daraja: <b>${LV[S.lvl]}</b>`;btn=`<button onclick="startRound()">Davom etish ➡️</button>`;}
+ else{S.lvl=Math.max(0,S.lvl-1);msg=`Xato bo'ldi (${S.lost} ta). ${old==LV[S.lvl]?"Shu darajada yana urinamiz":"Yana <b>"+LV[S.lvl]+"</b> darajaga qaytamiz"}.`;btn=`<button onclick="startRound()">Davom etish ➡️</button>`;}
+ app.innerHTML=`<h2>📋 ${old} natijasi</h2><div class="card"><ul style="padding-left:18px">${list}</ul></div><p>${msg}</p>${btn}`;
+}
+
+/* O'yinlar menyusi */
+function game(){app.innerHTML=`<h2>🎮 O'yinlar</h2><button class="opt" onclick="fresh()">🧠 <b>Fresh Brain</b><br><span class="sub">So'zlarni yozib topasiz: A1 dan C1 gacha</span></button><button class="opt" onclick="mem()">🃏 <b>Juftini top</b><br><span class="sub">Dam olish uchun: inglizcha so'z va ma'nosini juftlang</span></button><button class="opt" onclick="wordle()">🟩 <b>5 harfli so'z</b><br><span class="sub">6 urinishda yashirin so'zni toping, rangli maslahatlar bilan</span></button>`;}
+
+/* Juftini top */
+let M;
+function mem(){
+ app.innerHTML=`<h2>🃏 Juftini top</h2><p class="sub">Kartalarni oching va inglizcha so'zni uning o'zbekcha ma'nosi bilan juftlang. Shoshilmang, vaqt hisoblanmaydi. Urinish soni qancha kam bo'lsa, shuncha ko'p yulduz olasiz.</p><button class="opt" onclick="memStart(6)">🙂 Oson · 6 juft</button><button class="opt" onclick="memStart(8)">😎 O'rta · 8 juft</button><button class="opt" onclick="memStart(10)">🔥 Qiyin · 10 juft</button><p class="sub" id="mb"></p><button class="alt" onclick="game()">⬅️ O'yinlar</button>`;
+ store.get("memBest",v=>{let b={};try{b=JSON.parse(v)||{}}catch(e){}window._mb=b;const e=document.getElementById("mb");if(e&&Object.keys(b).length)e.textContent="🏅 Eng yaxshi: "+Object.entries(b).map(([k,x])=>k+" juft — "+x+" urinish").join(" · ");});
+}
+function memStart(n){
+ const lv=n==6?[0,1]:n==8?[1,2,3]:[2,3,4];
+ const pairs=shuffle([].concat(...lv.map(i=>LW[i]))).slice(0,n);
+ const cards=[];pairs.forEach((w,i)=>{cards.push({id:i,t:w[0],en:true});cards.push({id:i,t:w[1].split(",")[0],en:false});});
+ M={n,pairs,cards:shuffle(cards),open:[],done:new Set(),moves:0,lock:false};
+ memDraw();
+}
+function memDraw(){
+ const cols=M.n==6?3:4;
+ app.innerHTML=`<h2>🃏 Juftini top</h2><div class="sub">Urinishlar: <b id="mm">${M.moves}</b> · Topilgan: <b id="mp">${M.done.size/2}</b>/${M.n}</div><div class="mg" style="grid-template-columns:repeat(${cols},1fr)">${M.cards.map((c,i)=>`<div class="mc" id="c${i}" onclick="flip(${i})"><div class="mi"><div class="mf">?</div><div class="mk ${c.en?"en":"uz"}">${esc(c.t)}</div></div></div>`).join("")}</div><p><button class="alt" onclick="mem()">⬅️ Chiqish</button></p>`;
+}
+function flip(i){
+ if(M.lock||M.open.includes(i)||M.done.has(i))return;
+ document.getElementById("c"+i).classList.add("up");M.open.push(i);
+ if(M.open.length<2)return;
+ M.moves++;document.getElementById("mm").textContent=M.moves;
+ const [a,b]=M.open,ea=document.getElementById("c"+a),eb=document.getElementById("c"+b);
+ if(M.cards[a].id==M.cards[b].id){
+  M.done.add(a);M.done.add(b);ea.classList.add("ok");eb.classList.add("ok");M.open=[];
+  document.getElementById("mp").textContent=M.done.size/2;
+  if(M.done.size==M.cards.length)setTimeout(memEnd,800);
+ }else{
+  M.lock=true;
+  setTimeout(()=>{ea.classList.remove("up");eb.classList.remove("up");M.open=[];M.lock=false;},900);
+ }
+}
+function memEnd(){
+ const n=M.n,m=M.moves,st=m<=n+2?"⭐⭐⭐":m<=Math.ceil(n*1.7)?"⭐⭐":"⭐";
+ const b=window._mb||{};let rec="";
+ if(!b[n]||m<b[n]){b[n]=m;window._mb=b;store.set("memBest",JSON.stringify(b));rec="<p>🏅 <b>Yangi rekord!</b></p>";}
+ const list=M.pairs.map(w=>`<li><b>${esc(w[0])}</b> — ${esc(w[1])}</li>`).join("");
+ app.innerHTML=`<h2>🎉 Barakalla!</h2><div class="card"><div class="word">${st}</div><p style="text-align:center">${m} ta urinishda topdingiz</p>${rec}</div><div class="card"><b>Shu o'yindagi so'zlar:</b><ul style="padding-left:18px">${list}</ul></div><button onclick="memStart(${n})">🔄 Yana o'ynash</button> <button class="alt" onclick="mem()">Daraja</button> <button class="alt" onclick="game()">O'yinlar</button>`;
+}
+
+/* 5 harfli so'z (Wordle uslubi) */
+const W5=[["apple","olma"],["bread","non"],["water","suv"],["house","uy"],["world","dunyo"],["light","yorug'lik"],["music","musiqa"],["dream","orzu, tush"],["happy","baxtli"],["green","yashil"],["smile","tabassum"],["money","pul"],["plant","o'simlik"],["clean","toza"],["sleep","uyqu"],["river","daryo"],["story","hikoya"],["heart","yurak"],["brain","miya"],["learn","o'rganmoq"],["teach","o'rgatmoq"],["write","yozmoq"],["think","o'ylamoq"],["early","erta"],["voice","ovoz"],["peace","tinchlik"],["trust","ishonch"],["brave","jasur"],["proud","g'ururli"],["truth","haqiqat"],["power","kuch"],["youth","yoshlik"],["glass","oyna, stakan"],["table","stol"],["chair","stul"],["clock","soat"],["ocean","okean"],["night","tun"],["earth","yer"],["stone","tosh"]];
+let W;
+function wordle(){W={a:shuffle(W5)[0],g:[],cur:"",st:"play",ks:{},msg:""};wDraw();}
+function wScore(g,a){const r=Array(5).fill("x"),left={};for(let i=0;i<5;i++){if(g[i]==a[i])r[i]="g";else left[a[i]]=(left[a[i]]||0)+1;}for(let i=0;i<5;i++){if(r[i]!="g"&&left[g[i]]>0){r[i]="y";left[g[i]]--;}}return r;}
+function wDraw(){
+ let rows="";
+ for(let r=0;r<6;r++){let cells="";for(let c=0;c<5;c++){let ch="",cl="";if(r<W.g.length){ch=W.g[r].w[c];cl=W.g[r].s[c];}else if(r==W.g.length&&W.st=="play")ch=W.cur[c]||"";cells+=`<div class="wt ${cl}">${ch}</div>`;}rows+=`<div class="wr">${cells}</div>`;}
+ const play=W.st=="play";
+ const kb=["qwertyuiop","asdfghjkl","zxcvbnm"].map((r,ri)=>`<div class="kr">${ri==2?`<button class="alt" style="flex:1.6" onclick="wEnter()">OK</button>`:""}${[...r].map(c=>`<button class="${W.ks[c]||""}" onclick="wType('${c}')">${c.toUpperCase()}</button>`).join("")}${ri==2?`<button class="alt" style="flex:1.6" onclick="wBack()">⌫</button>`:""}</div>`).join("");
+ const end=W.st=="won"?`<p style="text-align:center">🎉 <b>Barakalla!</b> ${W.g.length}-urinishda topdingiz.<br><b>${W.a[0].toUpperCase()}</b> — ${esc(W.a[1])}</p>`:`<p style="text-align:center">😅 Bu safar topilmadi.<br>So'z: <b>${W.a[0].toUpperCase()}</b> — ${esc(W.a[1])}</p>`;
+ app.innerHTML=`<h2>🟩 5 harfli so'z</h2><div class="sub">Ma'nosi: <b>${esc(W.a[1])}</b></div><div class="wg">${rows}</div>${W.msg?`<p style="text-align:center">${W.msg}</p>`:""}${play?kb+`<p class="sub">🟩 harf va joyi to'g'ri · 🟨 harf bor, joyi boshqa · ⬛ bunday harf yo'q</p>`:end+`<button onclick="wordle()">🔄 Yangi so'z</button> <button class="alt" onclick="game()">O'yinlar</button>`}`;
+}
+function wType(c){if(W.st!="play"||W.cur.length>=5)return;W.cur+=c;W.msg="";wDraw();}
+function wBack(){if(W.st!="play")return;W.cur=W.cur.slice(0,-1);W.msg="";wDraw();}
+function wEnter(){
+ if(W.st!="play")return;
+ if(W.cur.length<5){W.msg="5 ta harf yozing";wDraw();return;}
+ const r=wScore(W.cur,W.a[0]),rk={x:1,y:2,g:3};
+ W.g.push({w:W.cur,s:r});
+ for(let i=0;i<5;i++){const ch=W.cur[i];if(!W.ks[ch]||rk[r[i]]>rk[W.ks[ch]])W.ks[ch]=r[i];}
+ if(W.cur==W.a[0])W.st="won";else if(W.g.length>=6)W.st="lost";
+ W.cur="";W.msg="";wDraw();
+}
+
+/* Quiz */
+let Q;
+function quiz(){app.innerHTML=`<h2>📝 Quiz</h2><p class="sub">Kitobni tanlang</p>`+BOOKS.map((b,i)=>`<button class="opt" onclick="startQuiz(${i})">📖 ${esc(b.t)}</button>`).join("");}
+function startQuiz(i){Q={b:i,n:0,s:0,qs:BOOKS[i].q.map(q=>{const o=q[1].map((t,k)=>[t,k==q[2]]);return{t:q[0],o:shuffle(o)};})};showQ();}
+function showQ(){
+ if(Q.n>=Q.qs.length){app.innerHTML=`<h2>🏁 Natija</h2><div class="card"><div class="word">${Q.s} / ${Q.qs.length}</div></div><button onclick="startQuiz(${Q.b})">🔄 Qayta</button> <button class="alt" onclick="quiz()">Kitoblar</button>`;return;}
+ const q=Q.qs[Q.n];
+ app.innerHTML=`<div class="sub">${esc(BOOKS[Q.b].t)} · ${Q.n+1}/${Q.qs.length}</div><h2>${esc(q.t)}</h2>`+q.o.map((o,k)=>`<button class="opt" onclick="ans(${k},this)">${"ABC"[k]}) ${esc(o[0])}</button>`).join("");
+}
+function ans(k,el){const q=Q.qs[Q.n];const bs=[...app.querySelectorAll(".opt")];bs.forEach((b,i)=>{b.disabled=true;if(q.o[i][1])b.classList.add("ok");});if(q.o[k][1])Q.s++;else el.classList.add("no");setTimeout(()=>{Q.n++;showQ();},1100);}
+
+/* Notes */
+function notes(){store.get("notes",v=>{let n=[];try{n=JSON.parse(v)||[]}catch(e){}drawNotes(n);});}
+function drawNotes(n){
+ app.innerHTML=`<h2>🗒 Eslatmalar</h2><textarea id="nt" maxlength="300" placeholder="Muhim fikr yoki iqtibosni yozing..."></textarea><p><button onclick="addNote()">➕ Saqlash</button></p><div id="nl">`+(n.length?n.map((t,i)=>`<div class="card">${esc(t)}<p><button class="alt" onclick="delNote(${i})">🗑 O'chirish</button></p></div>`).join(""):`<p class="sub">Hozircha eslatma yo'q.</p>`)+`</div>`;
+ window._n=n;
+}
+function addNote(){const t=$("#nt").value.trim();if(!t)return;const n=[t,...window._n];if(JSON.stringify(n).length>3900){alert("Joy tugadi. Eskisini o'chiring.");return;}store.set("notes",JSON.stringify(n));drawNotes(n);}
+function delNote(i){const n=window._n.filter((_,k)=>k!=i);store.set("notes",JSON.stringify(n));drawNotes(n);}
+
+/* Insights */
+function ins(){app.innerHTML=`<h2>💡 Insight'lar</h2>`+BOOKS.map((b,i)=>`<div class="card"><b>📖 ${esc(b.t)}</b><ol>${b.i.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`).join("");}
+
+/* Chat */
+function chat(){app.innerHTML=`<h2>💬 Chat</h2><div class="card"><p>Savol yoki taklifingiz bormi? Menga to'g'ridan-to'g'ri yozing.</p><button onclick="openChat()">Menga yozish</button></div>`;}
+function openChat(){const u="https://t.me/"+MY_USERNAME;if(tg&&tg.openTelegramLink)tg.openTelegramLink(u);else window.open(u,"_blank");}
+
+go("game");
+</script>
+</body>
+</html>
